@@ -1,0 +1,2 @@
+# tichu
+Tichu is cardgame
