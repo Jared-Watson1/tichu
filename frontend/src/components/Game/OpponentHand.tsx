@@ -18,7 +18,6 @@ const POSITION_LABELS: Record<number, string> = {
 
 export default function OpponentHand({
   player,
-  position,
   isCurrentTurn = false,
   isTeammate = false,
   outOrder = [],

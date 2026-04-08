@@ -37,7 +37,7 @@ export default function GameLog() {
           ) : (
             log.map((entry, i) => (
               <div key={i} className="py-0.5 border-b border-gray-800 last:border-0">
-                {entry}
+                {entry.message}
               </div>
             ))
           )}
