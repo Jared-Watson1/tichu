@@ -46,6 +46,7 @@ export interface GameCreatedPayload {
 
 export interface PlayerJoinedPayload {
   player_id?: string;
+  game_id?: string;
   player_name: string;
   seat: number;
   team: number;

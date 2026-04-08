@@ -64,15 +64,38 @@ async def websocket_handler(websocket: WebSocket, lobby: LobbyManager) -> None:
                         player_id = reconnect_id
                         game_id = join_game_id
 
-                        await send_event(
-                            lobby, game_id, ServerMsgType.PLAYER_RECONNECTED,
-                            {"seat": seat, "player_name": payload.get("player_name", "")},
-                        )
-
                         room = lobby.get_room(game_id)
                         if room and room.game_state:
+                            await send_event(
+                                lobby, game_id, ServerMsgType.PLAYER_RECONNECTED,
+                                {"seat": seat, "player_name": payload.get("player_name", "")},
+                            )
                             await broadcast_game_state(lobby, game_id, room.game_state)
+                        else:
+                            player_names = {
+                                s: c.player_name for s, c in room.players.items()
+                            } if room else {}
+                            await send_to_player(
+                                websocket, ServerMsgType.PLAYER_JOINED,
+                                {
+                                    "player_id": player_id,
+                                    "seat": seat,
+                                    "team": seat % 2,
+                                    "game_id": game_id,
+                                },
+                            )
+                            await send_event(
+                                lobby, game_id, ServerMsgType.PLAYER_JOINED,
+                                {
+                                    "player_name": payload.get("player_name", ""),
+                                    "seat": seat,
+                                    "team": seat % 2,
+                                    "players": player_names,
+                                },
+                            )
                     else:
+                        if player_id is not None:
+                            raise LobbyError("Already joined a room")
                         player_id, seat = lobby.join_game(
                             join_game_id, payload.get("player_name", "Player"), websocket
                         )
@@ -88,6 +111,7 @@ async def websocket_handler(websocket: WebSocket, lobby: LobbyManager) -> None:
                                 "player_id": player_id,
                                 "seat": seat,
                                 "team": seat % 2,
+                                "game_id": join_game_id,
                             },
                         )
                         await send_event(

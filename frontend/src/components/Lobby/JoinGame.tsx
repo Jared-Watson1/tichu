@@ -1,19 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useWS } from "../../contexts/WebSocketContext";
 import { useGameStore } from "../../stores/gameStore";
 
 export default function JoinGame() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { actions } = useWS();
   const setPlayerName = useGameStore((s) => s.setPlayerName);
   const errorMessage = useGameStore((s) => s.errorMessage);
+
+  useEffect(() => {
+    if (errorMessage) setIsSubmitting(false);
+  }, [errorMessage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = name.trim();
     const trimmedCode = code.trim().toUpperCase();
-    if (!trimmedName || !trimmedCode) return;
+    if (!trimmedName || !trimmedCode || isSubmitting) return;
+    setIsSubmitting(true);
     setPlayerName(trimmedName);
     actions.joinGame(trimmedCode, trimmedName);
   };
@@ -46,12 +52,12 @@ export default function JoinGame() {
       )}
       <button
         type="submit"
-        disabled={!name.trim() || !code.trim()}
+        disabled={!name.trim() || !code.trim() || isSubmitting}
         className="px-6 py-3 rounded-lg bg-emerald-500 text-white font-semibold
           hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed
           transition-colors"
       >
-        Join Game
+        {isSubmitting ? "Joining..." : "Join Game"}
       </button>
     </form>
   );

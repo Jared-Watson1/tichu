@@ -1,0 +1,1 @@
+This is the backend game engine and lobby management system for the card game Tichu. It is hosted on Railway. 

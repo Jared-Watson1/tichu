@@ -68,6 +68,11 @@ export function useWebSocket() {
         if (p.player_id) {
           store.getState().setPlayerId(p.player_id);
           sessionStorage.setItem("tichu_player_id", p.player_id);
+          if (p.game_id) {
+            store.getState().setGameId(p.game_id);
+            sessionStorage.setItem("tichu_game_id", p.game_id);
+          }
+          store.getState().setPhase("waiting");
         }
         if (p.players) {
           const mapped: Record<number, string> = {};
@@ -91,6 +96,7 @@ export function useWebSocket() {
       case "game_state": {
         const gs = payload as unknown as GameState;
         store.getState().setGameState(gs);
+        store.getState().setPhase("playing");
         break;
       }
 
@@ -225,7 +231,7 @@ export function useWebSocket() {
         );
         store.getState().setGameId(gameId);
         store.getState().setPlayerId(playerId);
-        store.getState().setPhase("playing");
+        store.getState().setPhase("waiting");
       }
     };
 

@@ -137,6 +137,13 @@ class LobbyManager:
         if room is None:
             raise LobbyError(f"Room {game_id} not found")
 
+        for seat, conn in room.players.items():
+            if conn.player_id == player_id:
+                conn.websocket = websocket
+                conn.connected = True
+                self._player_to_room[player_id] = game_id
+                return seat
+
         dc_entry: DisconnectedPlayer | None = None
         dc_seat: int | None = None
         for seat, dc in room.disconnected_players.items():
@@ -237,6 +244,28 @@ class LobbyManager:
         if room is None:
             return
         room.disconnected_players.pop(seat, None)
+
+    def cleanup_stale_rooms(self, max_age_seconds: int = 7200) -> int:
+        now = time.time()
+        to_remove: list[str] = []
+        for game_id, room in self._rooms.items():
+            has_active_players = any(
+                conn.connected for conn in room.players.values()
+            )
+            if has_active_players:
+                continue
+            age = now - room.created_at
+            no_game_started = room.game_state is None
+            if no_game_started and age > max_age_seconds:
+                to_remove.append(game_id)
+            elif room.game_state is not None and not room.players and not room.disconnected_players:
+                to_remove.append(game_id)
+        for game_id in to_remove:
+            room = self._rooms.pop(game_id, None)
+            if room:
+                for conn in room.players.values():
+                    self._player_to_room.pop(conn.player_id, None)
+        return len(to_remove)
 
     def _generate_room_code(self) -> str:
         chars = string.ascii_uppercase + string.digits
